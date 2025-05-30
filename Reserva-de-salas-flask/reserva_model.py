@@ -1,4 +1,5 @@
 from database import db
+import requests
 
 class Reserva(db.Model):
     __tablename__ = 'reservas'
@@ -11,6 +12,14 @@ class Reserva(db.Model):
     hora_fim = db.Column(db.String(10), nullable=False)
 
     def to_dict(self, turma=None):
+        if turma is None:
+            try:
+                response = requests.get(f"http://127.0.0.1:5000/api/turma/{self.turma_id}")
+                if response.status_code == 200:
+                    turma = response.json()
+            except Exception:
+                turma = None
+
         return {
             "id": self.id,
             "turma_id": self.turma_id,
