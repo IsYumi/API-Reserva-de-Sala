@@ -10,7 +10,7 @@ A API é composta por dois microsserviços principais:
 
 * **Gestão Escolar**
 
-  * Responsável pelo cadastro, listagem, edição e exclusão de turmas.
+  * Responsável pelo cadastro, listagem, edição e exclusão de turmas, docente e alunos.
   * Expõe endpoints REST para acesso e manipulação das informações escolares.
 
 * **API de Reservas de Salas**
