@@ -17,7 +17,7 @@ def obter_dados_turma(turma_id):
 
 
 def validar_turma(turma_id):
-    resp = requests.get(f"http://localhost:5000/api/turmas/{turma_id}")
+    resp = requests.get(f"http://127.0.0.1:5000/api/turma/{turma_id}")
     return resp.status_code == 200
 
 @routes.route("/reservas", methods=["POST"])
@@ -47,17 +47,20 @@ def listar_reservas():
     resultado = []
     for r in reservas:
         turma_info = obter_dados_turma(r.turma_id)
-        print(f"Turma ID: {r.turma_id} -> turma_info: {turma_info}")  # DEBUG
+        if turma_info is None:
+            # Ignora reservas com turma inexistente
+            continue
         resultado.append({
             "id": r.id,
             "turma_id": r.turma_id,
-            "turma": turma_info,  
+            "turma": turma_info,
             "sala": r.sala,
             "data": r.data,
             "hora_inicio": r.hora_inicio,
             "hora_fim": r.hora_fim
         })
     return jsonify(resultado)
+
 
 
 @routes.route("/reservas/<int:id>", methods=["GET"])
@@ -96,10 +99,25 @@ def deletar_reserva(id):
     reserva = Reserva.query.get(id)
     if not reserva:
         return jsonify({"erro": "Reserva não encontrada"}), 404
-
     db.session.delete(reserva)
     db.session.commit()
-@routes.route("/teste-turma/<int:turma_id>", methods=["GET"])
-def teste_turma(turma_id):
-    turma = obter_dados_turma(turma_id)
-    return jsonify(turma)
+    return jsonify({"mensagem": "Reserva deletada com sucesso"}), 200
+
+@routes.route("/reservas/limpar_orfaos", methods=["DELETE"])
+def limpar_orfaos():
+    from reserva_model import Reserva
+    reservas = Reserva.query.all()
+    removidas = 0
+    for reserva in reservas:
+        # Tenta validar se a turma existe na API de turmas
+        try:
+            resp = requests.get(f"http://127.0.0.1:5000/api/turma/{reserva.turma_id}")
+            if resp.status_code != 200:
+                db.session.delete(reserva)
+                removidas += 1
+        except:
+            # Se falhar, considere remover
+            db.session.delete(reserva)
+            removidas += 1
+    db.session.commit()
+    return {"mensagem": f"{removidas} reservas órfãs removidas."}, 200
